@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Draw a Linestring!</title>
+    <!--Import D3.js-->
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <!--Import Leaflet.css-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+          integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+          crossorigin=""/>
+    <!--Import Leaflet.js-->
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+            integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+            crossorigin="">
+    </script>
+    <!--Import Turf.js-->
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+</head>
+<style type="text/css">
+    #mapid {
+        /*height: 800px; */
+        height: 850px;
+        width: 100%; /*margin: 0px; padding: 0px*/
+    }
+</style>
+<body>
+    <div id="buttons">
+        <button id='maplockbutton'>Map lock toggle</button>
+        <button id='freedrawbutton'>Free draw toggle</button>
+    </div>
+    <div id="mapid"></div>
+</body>
+    <script type="text/javascript">
+
+        //Initialize map
+        var center = new L.LatLng(38.889931, -77.009003);
+        var mymap = L.map('mapid').setView(center, 4);
+
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+            maxZoom: 10,
+            minZoom: 2,
+            id: 'mapbox.light',
+            accessToken: 'pk.eyJ1IjoiamFnb2R3aW4iLCJhIjoiY2lnOGQxaDhiMDZzMXZkbHYzZmN4ZzdsYiJ9.Uwh_L37P-qUoeC-MBSDteA'
+        }).addTo(mymap);
+
+        //Code for buttons
+        var mapLockToggle = true;
+        d3.select('#maplockbutton')
+            .on('click', function () {
+                if (mapLockToggle) {
+                    mymap.zoomControl.disable();
+                    mymap.dragging.disable();
+                    mymap.doubleClickZoom.disable();
+                    mymap.boxZoom.disable();
+                    mymap.scrollWheelZoom.disable();
+                    mymap.touchZoom.disable();
+                } else {
+                    mymap.zoomControl.enable();
+                    mymap.dragging.enable();
+                    mymap.doubleClickZoom.enable();
+                    mymap.boxZoom.enable();
+                    mymap.scrollWheelZoom.enable();
+                    mymap.touchZoom.enable();
+                }
+                mapLockToggle = !mapLockToggle;
+            });
+
+        var freeDrawToggle = true;
+        d3.select('#freedrawbutton')
+            .on('click', function () {
+                if (freeDrawToggle) {
+
+                } else {
+
+                }
+                freeDrawToggle = !freeDrawToggle;
+            });
+
+        //Draw geoJSON linestrings by dragging
+        var latlngList = [];
+        var latlngMatrix = [];
+
+        var linestring;
+        var linestringList = [];
+
+        var linestringLayer;
+
+        d3.select("#mapid")
+            .call(d3.drag()
+                .on("start", function () {
+                    if (freeDrawToggle) {
+                        dragstarted(d3.mouse(this));
+                    }
+                })
+                .on("drag", function () {
+                    if (freeDrawToggle) {
+                        dragged(d3.mouse(this));
+                    }
+                })
+                .on("end", function () {
+                    if (freeDrawToggle) {
+                        dragended(d3.mouse(this));
+                    }
+                })
+            );
+
+        function dragstarted(mouse) {
+            //Get latlng array, then push to the list of latlng coords
+            latlngList.push(getLatLngArray(mouse)); //*First get the pixel coords*//
+        }
+
+        function dragged(mouse) {
+            if (latlngList.length == 1) {
+                createGeoJSON(mouse);
+            } else if (latlngList.length > 1) {
+                appendGeoJSON(mouse);
+            } else {
+                console.log('oops');
+            }
+        }
+
+        function dragended(mouse) {
+            if (latlngList.length > 1) {  //Don't want it to do these things if only one point is added to latlngList
+                appendGeoJSON(mouse);
+                linestring = turf.simplify(linestring, {tolerance: .0001});
+                linestringLayer.remove();
+                linestringLayer = L.geoJson(linestring).addTo(mymap);
+
+                latlngMatrix.push(latlngList);
+                linestringList.push(linestring);
+            }
+
+            latlngList = [];
+            linestring = null;
+        }
+
+        function getLatLngArray(element) {
+            //Then make that a Leaflet point object
+            element = L.point(element[0], element[1]);
+            //Then convert it to latlng objects
+            element = mymap.layerPointToLatLng(element);
+            //Then convert it to latlng arrays
+            element = [element.lng, element.lat];
+            return element
+        }
+
+        function createGeoJSON(mouse) {
+            latlngList.push(getLatLngArray(mouse));
+            linestring = turf.lineString(latlngList);
+            linestringLayer = L.geoJson(linestring).addTo(mymap);
+        }
+
+        function appendGeoJSON(mouse) {
+            latlngList.push(getLatLngArray(mouse));
+            linestringLayer.remove();
+            linestringLayer = L.geoJson(linestring).addTo(mymap);
+        }
+    </script>
+</html>
