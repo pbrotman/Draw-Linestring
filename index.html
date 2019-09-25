@@ -20,15 +20,11 @@
 <style type="text/css">
     #mapid {
         /*height: 800px; */
-        height: 850px;
+        height: 100vh;
         width: 100%; /*margin: 0px; padding: 0px*/
     }
 </style>
 <body>
-    <div id="buttons">
-        <button id='maplockbutton'>Map lock toggle</button>
-        <button id='freedrawbutton'>Free draw toggle</button>
-    </div>
     <div id="mapid"></div>
 </body>
     <script type="text/javascript">
@@ -45,38 +41,48 @@
             accessToken: 'pk.eyJ1IjoiamFnb2R3aW4iLCJhIjoiY2lnOGQxaDhiMDZzMXZkbHYzZmN4ZzdsYiJ9.Uwh_L37P-qUoeC-MBSDteA'
         }).addTo(mymap);
 
-        //Code for buttons
+        //Code for custom control
         var mapLockToggle = true;
-        d3.select('#maplockbutton')
-            .on('click', function () {
-                if (mapLockToggle) {
-                    mymap.zoomControl.disable();
-                    mymap.dragging.disable();
-                    mymap.doubleClickZoom.disable();
-                    mymap.boxZoom.disable();
-                    mymap.scrollWheelZoom.disable();
-                    mymap.touchZoom.disable();
-                } else {
-                    mymap.zoomControl.enable();
-                    mymap.dragging.enable();
-                    mymap.doubleClickZoom.enable();
-                    mymap.boxZoom.enable();
-                    mymap.scrollWheelZoom.enable();
-                    mymap.touchZoom.enable();
+        var freeDrawToggle = false;
+
+        var customControl = L.Control.extend({
+            options: {position: 'topleft'},
+            onAdd: function(mymap){
+                var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                container.style.backgroundColor = 'white';
+                container.style.backgroundSize = "30px 30px";
+                container.style.width = '30px';
+                container.style.height = '30px';
+                container.onclick = function(){
+                    if (freeDrawToggle) {
+
+                    } else {
+
+                    }
+                    freeDrawToggle = !freeDrawToggle;
+
+                    if (mapLockToggle) {
+                        mymap.zoomControl.disable();
+                        mymap.dragging.disable();
+                        mymap.doubleClickZoom.disable();
+                        mymap.boxZoom.disable();
+                        mymap.scrollWheelZoom.disable();
+                        mymap.touchZoom.disable();
+                    } else {
+                        mymap.zoomControl.enable();
+                        mymap.dragging.enable();
+                        mymap.doubleClickZoom.enable();
+                        mymap.boxZoom.enable();
+                        mymap.scrollWheelZoom.enable();
+                        mymap.touchZoom.enable();
+                    }
+                    mapLockToggle = !mapLockToggle;
                 }
-                mapLockToggle = !mapLockToggle;
-            });
+                return container;
+            }
+        });
 
-        var freeDrawToggle = true;
-        d3.select('#freedrawbutton')
-            .on('click', function () {
-                if (freeDrawToggle) {
-
-                } else {
-
-                }
-                freeDrawToggle = !freeDrawToggle;
-            });
+        mymap.addControl(new customControl());
 
         //Draw geoJSON linestrings by dragging
         var latlngList = [];
