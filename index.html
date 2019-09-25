@@ -78,6 +78,12 @@
                     }
                     mapLockToggle = !mapLockToggle;
                 }
+                container.onmouseover = function(){
+                    container.style.backgroundColor = 'LightGray';
+                };
+                container.onmouseleave = function(){
+                    container.style.backgroundColor = 'white';
+                }
                 return container;
             }
         });
